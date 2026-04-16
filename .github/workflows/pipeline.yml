@@ -31,6 +31,9 @@ jobs:
       - name: Instalar dependencias
         run: npm install
 
+      - name: Sync SvelteKit
+        run: npx svelte-kit sync
+
       - name: Build del proyecto SvelteKit
         run: npm run build
 
