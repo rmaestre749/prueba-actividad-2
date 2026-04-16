@@ -1,0 +1,82 @@
+name: CI/CD Pipeline — Build & Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # ─────────────────────────────────────────
+  # ETAPA 1: BUILD
+  # ─────────────────────────────────────────
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Instalar dependencias
+        run: |
+          if [ -f package.json ]; then
+            npm install
+            echo "Dependencias instaladas correctamente."
+          else
+            echo "Proyecto estático detectado — no hay dependencias que instalar."
+          fi
+
+      - name: Verificar archivos del proyecto
+        run: |
+          echo "Archivos listos para desplegar:"
+          ls -la
+
+      - name: Preparar carpeta de publicación
+        run: |
+          if [ -d "dist" ]; then
+            echo "Usando carpeta dist/"
+          elif [ -d "build" ]; then
+            echo "Usando carpeta build/"
+          else
+            echo "Usando raíz del proyecto como carpeta de publicación"
+          fi
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v4
+
+      - name: Subir artefacto de build
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "."
+
+  # ─────────────────────────────────────────
+  # ETAPA 2: DEPLOY
+  # ─────────────────────────────────────────
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Desplegar en GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
