@@ -16,13 +16,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # ─────────────────────────────────────────
-  # ETAPA 1: BUILD
-  # ─────────────────────────────────────────
   build:
     name: Build
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout del repositorio
         uses: actions/checkout@v4
@@ -33,28 +29,10 @@ jobs:
           node-version: "20"
 
       - name: Instalar dependencias
-        run: |
-          if [ -f package.json ]; then
-            npm install
-            echo "Dependencias instaladas correctamente."
-          else
-            echo "Proyecto estático detectado — no hay dependencias que instalar."
-          fi
+        run: npm install
 
-      - name: Verificar archivos del proyecto
-        run: |
-          echo "Archivos listos para desplegar:"
-          ls -la
-
-      - name: Preparar carpeta de publicación
-        run: |
-          if [ -d "dist" ]; then
-            echo "Usando carpeta dist/"
-          elif [ -d "build" ]; then
-            echo "Usando carpeta build/"
-          else
-            echo "Usando raíz del proyecto como carpeta de publicación"
-          fi
+      - name: Build del proyecto SvelteKit
+        run: npm run build
 
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v4
@@ -64,18 +42,13 @@ jobs:
         with:
           path: "build"
 
-  # ─────────────────────────────────────────
-  # ETAPA 2: DEPLOY
-  # ─────────────────────────────────────────
   deploy:
     name: Deploy to GitHub Pages
     needs: build
     runs-on: ubuntu-latest
-
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
       - name: Desplegar en GitHub Pages
         id: deployment
